@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-ebs-dynamic-pod
+  namespace: default
+  labels:
+    app: nginx-ebs-dynamic
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: ebs-storage
+      mountPath: /usr/share/nginx/html
+    lifecycle:
+      postStart:
+        exec:
+          command: ["/bin/sh", "-c", "echo 'Hello from EBS Dynamic Volume! Pod: nginx-ebs-dynamic-pod' > /usr/share/nginx/html/index.html"]
+  volumes:
+  - name: ebs-storage
+    persistentVolumeClaim:
+      claimName: ebs-dynamic-pvc

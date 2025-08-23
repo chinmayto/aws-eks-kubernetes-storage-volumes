@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-s3
+  labels:
+    app: nginx-s3
+spec:
+  serviceAccountName: s3-csi-driver-sa
+  containers:
+  - name: nginx
+    image: nginx:alpine
+    ports:
+    - containerPort: 80
+    command:
+    - /bin/sh
+    - -c
+    - |
+      # Create sample content
+      echo "<h1>S3 Mountpoint Demo</h1>" > /usr/share/nginx/html/index.html
+      echo "<p>This content is served from S3!</p>" >> /usr/share/nginx/html/index.html
+      echo "<p>Generated at: $(date)</p>" >> /usr/share/nginx/html/index.html
+      echo "Hello from S3 storage!" > /usr/share/nginx/html/hello.txt
+      # Start nginx
+      nginx -g 'daemon off;'
+    volumeMounts:
+    - name: s3-storage
+      mountPath: /usr/share/nginx/html
+  volumes:
+  - name: s3-storage
+    persistentVolumeClaim:
+      claimName: s3-pvc
+  restartPolicy: Always
