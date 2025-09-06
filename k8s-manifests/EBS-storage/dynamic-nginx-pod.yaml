@@ -14,10 +14,15 @@ spec:
     volumeMounts:
     - name: ebs-storage
       mountPath: /usr/share/nginx/html
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
     lifecycle:
       postStart:
         exec:
-          command: ["/bin/sh", "-c", "echo 'Hello from EBS Dynamic Volume! Pod: nginx-ebs-dynamic-pod' > /usr/share/nginx/html/index.html"]
+          command: ["/bin/sh", "-c", "echo '<h1>Hello from EBS Dynamic Volume!</h1><p><b>Pod:</b> '$POD_NAME'</p>' > /usr/share/nginx/html/index.html"]
   volumes:
   - name: ebs-storage
     persistentVolumeClaim:

@@ -20,7 +20,7 @@ spec:
         fieldRef:
           fieldPath: metadata.name
     command: ["/bin/sh"]
-    args: ["-c", "echo 'Hello from EBS Static Volume Pod: '$POD_NAME > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
+    args: ["-c", "echo '<h1>Hello from EBS Static Volume!</h1><p><b>Pod:</b> '$POD_NAME'</p>' > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'"]
   volumes:
   - name: ebs-storage
     persistentVolumeClaim:

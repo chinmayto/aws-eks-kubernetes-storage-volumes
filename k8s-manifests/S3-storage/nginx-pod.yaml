@@ -14,10 +14,15 @@ spec:
     image: nginx:latest
     ports:
     - containerPort: 80
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
     command: ["/bin/sh", "-c"]
     args:
     - |
-      echo 'Hello from S3 Mountpoint! Pod: nginx-s3-pod' > /usr/share/nginx/html/index.html || true
+      echo '<h1>Hello from S3 Mountpoint!</h1><p><b>Pod:</b> '$POD_NAME'</p>' > /usr/share/nginx/html/index.html || true
       sed -i 's/user  nginx;/user  root;/' /etc/nginx/nginx.conf
       nginx -g 'daemon off;'
     volumeMounts:
