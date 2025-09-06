@@ -114,16 +114,43 @@ After deployment, you'll get:
 
 ## Storage Options
 
-The project includes a complete EFS (Elastic File System) setup:
+The project includes comprehensive storage solutions for different use cases:
 
+### EFS (Elastic File System) - Shared Storage
 - **Location**: `infrastructure/modules/efs/` - Terraform module for EFS
 - **Manifests**: `k8s-manifests/EFS-storage/` - Kubernetes manifests
-- **Features**: Encrypted storage, multi-AZ mount targets, pod identity integration
-- **Usage**: ReadWriteMany persistent volumes for shared storage across pods
+- **Features**: Encrypted storage, multi-AZ mount targets, ReadWriteMany access
+- **Use Case**: Shared storage across multiple pods
+- **Provisioning**: Static and dynamic provisioning supported
 
-Deploy EFS storage:
 ```bash
 cd k8s-manifests/EFS-storage
+./static-deploy.sh    # For static provisioning
+./dynamic-deploy.sh   # For dynamic provisioning
+```
+
+### EBS (Elastic Block Store) - High Performance Storage
+- **Location**: `k8s-manifests/EBS-storage/` - Kubernetes manifests
+- **Features**: High IOPS, encryption, gp3 volumes with configurable performance
+- **Use Case**: High-performance storage for single pods
+- **Access Mode**: ReadWriteOnce (single node access)
+- **Provisioning**: Static and dynamic provisioning supported
+
+```bash
+cd k8s-manifests/EBS-storage
+./static-deploy.sh    # For static provisioning with existing EBS volume
+./dynamic-deploy.sh   # For dynamic provisioning (recommended)
+```
+
+### S3 (Simple Storage Service) - Object Storage
+- **Location**: `k8s-manifests/S3-storage/` - Kubernetes manifests
+- **Features**: Unlimited capacity, S3 Mountpoint CSI driver, Pod Identity integration
+- **Use Case**: Large-scale data storage, content serving, backup storage
+- **Access Mode**: ReadWriteMany (multiple pods can access)
+- **Provisioning**: Static provisioning only (S3 CSI driver limitation)
+
+```bash
+cd k8s-manifests/S3-storage
 ./deploy.sh
 ```
 

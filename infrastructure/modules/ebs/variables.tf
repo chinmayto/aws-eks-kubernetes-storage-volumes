@@ -8,16 +8,6 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID where EBS resources will be created"
-  type        = string
-}
-
-variable "private_subnet_ids" {
-  description = "List of private subnet IDs for EBS volume placement"
-  type        = list(string)
-}
-
 variable "availability_zones" {
   description = "List of availability zones for EBS volume placement"
   type        = list(string)

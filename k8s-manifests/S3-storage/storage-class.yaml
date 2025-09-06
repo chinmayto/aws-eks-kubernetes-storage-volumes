@@ -1,12 +1,10 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: s3-csi
+  name: s3-csi-sc
 provisioner: s3.csi.aws.com
 parameters:
-  # Replace with your actual S3 bucket name
-  bucketName: "YOUR_BUCKET_NAME"
-  # Optional: specify a prefix for objects in the bucket
-  # prefix: "my-app/"
+  bucketName: ${S3_BUCKET_NAME}
+  prefix: "k8s-storage/"
 volumeBindingMode: Immediate
 allowVolumeExpansion: false

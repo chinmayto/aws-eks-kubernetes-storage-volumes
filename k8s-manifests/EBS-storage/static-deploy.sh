@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Script to deploy EBS storage manifests with static volume provisioning
+# This script automatically gets EBS volume ID from Terraform outputs
 
 set -e
 
@@ -17,6 +18,15 @@ if [ ! -f "../../infrastructure/outputs.tf" ]; then
     echo -e "${RED}Error: Please run this script from the k8s-manifests/EBS-storage directory${NC}"
     exit 1
 fi
+
+# Check if EBS CSI driver is installed
+echo -e "${YELLOW}Checking EBS CSI driver installation...${NC}"
+if ! kubectl get pods -n kube-system | grep -q ebs-csi; then
+    echo -e "${RED}Error: EBS CSI driver not found. Make sure it's installed as an EKS addon.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}EBS CSI driver is installed${NC}"
 
 # Get EBS values from Terraform outputs
 echo -e "${YELLOW}Getting EBS values from Terraform...${NC}"
@@ -62,7 +72,7 @@ echo "kubectl get pvc ebs-static-pvc"
 echo "kubectl get pv ebs-static-pv"
 echo ""
 echo -e "${YELLOW}Wait for pod to be ready:${NC}"
-echo "kubectl wait --for=condition=Ready pod/nginx-ebs-static-pod --timeout=60s"
+echo "kubectl wait --for=condition=Ready pod/nginx-ebs-static-pod --timeout=120s"
 echo ""
 echo -e "${YELLOW}Test nginx web server:${NC}"
 echo "kubectl port-forward service/nginx-ebs-static-service 8082:80"

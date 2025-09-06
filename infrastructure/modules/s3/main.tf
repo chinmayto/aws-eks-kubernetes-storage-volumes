@@ -52,9 +52,12 @@ resource "aws_s3_bucket_public_access_block" "main" {
 ####################################################################################
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+data "aws_eks_cluster" "cluster" {
+  name = var.cluster_name
+}
 
 ####################################################################################
-# IAM Role for S3 CSI Driver (Pod Identity)
+# IAM Role for S3 CSI Driver (IRSA)
 ####################################################################################
 resource "aws_iam_role" "s3_csi_driver_role" {
   name = "${var.cluster_name}-s3-csi-driver-role"
@@ -65,12 +68,15 @@ resource "aws_iam_role" "s3_csi_driver_role" {
       {
         Effect = "Allow"
         Principal = {
-          Service = "pods.eks.amazonaws.com"
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}"
         }
-        Action = [
-          "sts:AssumeRole",
-          "sts:TagSession"
-        ]
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:kube-system:s3-csi-driver-sa"
+            "${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}:aud" = "sts.amazonaws.com"
+          }
+        }
       }
     ]
   })
@@ -83,11 +89,11 @@ resource "aws_iam_role" "s3_csi_driver_role" {
 }
 
 ####################################################################################
-# S3 CSI Driver Policy
+# S3 CSI Driver Policy (Based on AWS Documentation)
 ####################################################################################
 resource "aws_iam_policy" "s3_csi_driver_policy" {
   name        = "${var.cluster_name}-s3-csi-driver-policy"
-  description = "Policy for S3 CSI Driver"
+  description = "IAM policy for S3 CSI Driver based on AWS documentation"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -95,31 +101,19 @@ resource "aws_iam_policy" "s3_csi_driver_policy" {
       {
         Effect = "Allow"
         Action = [
-          "s3:ListBucket",
-          "s3:GetBucketLocation",
-          "s3:ListBucketMultipartUploads",
-          "s3:AbortMultipartUpload",
-          "s3:ListMultipartUploadParts"
+          "s3:ListBucket"
         ]
-        Resource = [
-          aws_s3_bucket.main.arn,
-          "arn:aws:s3:::*"
-        ]
+        Resource = aws_s3_bucket.main.arn
       },
       {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:GetObjectVersion",
-          "s3:DeleteObjectVersion",
-          "s3:RestoreObject"
+          "s3:AbortMultipartUpload",
+          "s3:DeleteObject"
         ]
-        Resource = [
-          "${aws_s3_bucket.main.arn}/*",
-          "arn:aws:s3:::*/*"
-        ]
+        Resource = "${aws_s3_bucket.main.arn}/*"
       }
     ]
   })
@@ -137,20 +131,4 @@ resource "aws_iam_policy" "s3_csi_driver_policy" {
 resource "aws_iam_role_policy_attachment" "s3_csi_driver_policy" {
   role       = aws_iam_role.s3_csi_driver_role.name
   policy_arn = aws_iam_policy.s3_csi_driver_policy.arn
-}
-
-####################################################################################
-# Pod Identity Association for S3 CSI Driver
-####################################################################################
-resource "aws_eks_pod_identity_association" "s3_csi_driver" {
-  cluster_name    = var.cluster_name
-  namespace       = "kube-system"
-  service_account = "s3-csi-driver-sa"
-  role_arn        = aws_iam_role.s3_csi_driver_role.arn
-
-  tags = {
-    Name        = "${var.cluster_name}-s3-csi-driver-pod-identity"
-    Environment = var.environment
-    Terraform   = "true"
-  }
 }

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Script to deploy EBS storage manifests with dynamic volume provisioning
+# This script requires EBS CSI driver to be installed as an EKS addon
 
 set -e
 

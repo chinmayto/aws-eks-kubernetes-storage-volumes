@@ -38,10 +38,7 @@ output "public_subnets" {
   value       = module.vpc.public_subnets
 }
 
-output "nat_gateway_ids" {
-  description = "List of IDs of the NAT Gateways"
-  value       = module.vpc.natgw_ids
-}
+
 
 # EFS Outputs
 output "efs_file_system_id" {
@@ -83,4 +80,20 @@ output "ebs_csi_driver_role_arn" {
 output "ebs_kms_key_id" {
   description = "ID of the KMS key used for EBS encryption"
   value       = module.ebs.ebs_kms_key_id
+}
+
+# S3 Outputs
+output "s3_bucket_name" {
+  description = "Name of the S3 bucket for Kubernetes storage"
+  value       = module.s3.s3_bucket_name
+}
+
+output "s3_bucket_arn" {
+  description = "ARN of the S3 bucket"
+  value       = module.s3.s3_bucket_arn
+}
+
+output "s3_csi_driver_role_arn" {
+  description = "ARN of the S3 CSI driver IAM role"
+  value       = module.s3.s3_csi_driver_role_arn
 }

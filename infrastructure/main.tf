@@ -19,10 +19,10 @@ module "vpc" {
   private_subnets = var.private_subnet_cidrs
   public_subnets  = var.public_subnet_cidrs
 
-  enable_nat_gateway     = true
-  enable_vpn_gateway     = false
-  single_nat_gateway     = false
-  one_nat_gateway_per_az = true
+  enable_nat_gateway = true
+  enable_vpn_gateway = false
+  single_nat_gateway = true
+  #one_nat_gateway_per_az = true
 
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -59,7 +59,7 @@ module "eks" {
 
   # EKS Managed Node Groups
   eks_managed_node_groups = {
-    main = {
+    EKS_Node_Group = {
       min_size     = 1
       max_size     = 3
       desired_size = 2
@@ -117,8 +117,6 @@ module "ebs" {
 
   cluster_name       = var.cluster_name
   environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnets
   availability_zones = slice(data.aws_availability_zones.available.names, 0, 2)
 
   # EBS volume configuration
@@ -145,14 +143,6 @@ module "s3" {
   environment        = var.environment
   bucket_name        = var.s3_bucket_name
   versioning_enabled = true
-
-  # OIDC provider information for IRSA
-  oidc_provider_arn = module.eks.oidc_provider_arn
-  oidc_provider     = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-
-  # Service account configuration
-  namespace            = "default"
-  service_account_name = "s3-mountpoint-sa"
 
   depends_on = [module.eks]
 }
@@ -195,8 +185,10 @@ resource "aws_eks_addon" "ebs_csi_driver" {
 ###  S3 Mountpoint CSI Driver Addon (deployed after S3 module)
 ####################################################################################
 resource "aws_eks_addon" "s3_mountpoint_csi_driver" {
-  cluster_name = module.eks.cluster_name
-  addon_name   = "aws-mountpoint-s3-csi-driver"
+  cluster_name             = module.eks.cluster_name
+  addon_name               = "aws-mountpoint-s3-csi-driver"
+  service_account_role_arn = module.s3.s3_csi_driver_role_arn
+  # Using IRSA for CSI driver, Pod Identity for application pods
 
   # Ensure this addon is created after the S3 module creates the IAM role and pod identity association
   depends_on = [module.s3]

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Script to deploy EFS storage manifests with static volume provisioning
+# This script automatically gets EFS file system ID from Terraform outputs
 
 set -e
 
@@ -18,6 +19,15 @@ if [ ! -f "../../infrastructure/outputs.tf" ]; then
     exit 1
 fi
 
+# Check if EFS CSI driver is installed
+echo -e "${YELLOW}Checking EFS CSI driver installation...${NC}"
+if ! kubectl get pods -n kube-system | grep -q efs-csi; then
+    echo -e "${RED}Error: EFS CSI driver not found. Make sure it's installed as an EKS addon.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}EFS CSI driver is installed${NC}"
+
 # Get EFS values from Terraform outputs
 echo -e "${YELLOW}Getting EFS values from Terraform...${NC}"
 cd ../../infrastructure
@@ -26,6 +36,7 @@ EFS_FILE_SYSTEM_ID=$(terraform output -raw efs_file_system_id 2>/dev/null || ech
 
 if [ -z "$EFS_FILE_SYSTEM_ID" ]; then
     echo -e "${RED}Error: Could not get EFS file system ID from Terraform. Make sure you've run 'terraform apply' first.${NC}"
+    echo -e "${YELLOW}Note: EFS file system must be created in your Terraform configuration with proper outputs.${NC}"
     exit 1
 fi
 
@@ -61,7 +72,7 @@ echo "kubectl get pvc efs-static-pvc"
 echo "kubectl get pv efs-static-pv"
 echo ""
 echo -e "${YELLOW}Wait for pod to be ready:${NC}"
-echo "kubectl wait --for=condition=Ready pod/nginx-efs-static-pod --timeout=60s"
+echo "kubectl wait --for=condition=Ready pod/nginx-efs-static-pod --timeout=120s"
 echo ""
 echo -e "${YELLOW}Test nginx web server:${NC}"
 echo "kubectl port-forward service/nginx-efs-static-service 8080:80"
