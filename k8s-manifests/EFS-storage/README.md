@@ -382,10 +382,12 @@ NAME                                    STATUS   VOLUME                         
 persistentvolumeclaim/efs-static-pvc    Bound    efs-static-pv                              5Gi        RWX            efs-static-sc    <unset>                 21s
 ```
 
-EFS Voume:
+EFS Volume:
+
 ![alt text](/k8s-manifests/EFS-storage/images/EFS-Volume.png)
 
 Nginx pod accessing EFS for index.html
+
 ![alt text](/k8s-manifests/EFS-storage/images/Static-EFS.png)
 
 ### Dynamic Provisioning
@@ -395,9 +397,9 @@ In dynamic provisioning, Kubernetes automatically creates PersistentVolumes (PVs
 How it works:
 1. Define a StorageClass that specifies the EFS file system and provisioning mode.
 2. When an application requests storage using a PVC, Kubernetes dynamically creates:
-3. A new PV backed by an EFS Access Point.
-4. A dedicated directory within the EFS filesystem.
-5. Pods mount the dynamically provisioned PV through the PVC.
+  - A new PV backed by an EFS Access Point.
+  - A dedicated directory within the EFS filesystem.
+  - Pods mount the dynamically provisioned PV through the PVC.
 
 
 - `dynamic-storage-class.yaml` - StorageClass for dynamic EFS provisioning (requires `${EFS_FILE_SYSTEM_ID}`)
@@ -569,6 +571,7 @@ kubectl exec -it nginx-efs-dynamic-pod -- ls -la /usr/share/nginx/html/
    kubectl delete -f dynamic-storage-class.yaml
    ```
 
+And then terraform destroy the EKS infrastructure if you are not using it to save costs.
 
 ### Conclusion
 

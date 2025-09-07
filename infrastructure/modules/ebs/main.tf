@@ -5,7 +5,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 ####################################################################################
-# Static EBS Volume for Testing (Optional)
+# Static EBS Volume for Testing
 ####################################################################################
 resource "aws_ebs_volume" "static_volume" {
   count = var.create_static_volume ? 1 : 0
