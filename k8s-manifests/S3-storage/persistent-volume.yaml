@@ -13,5 +13,5 @@ spec:
     driver: s3.csi.aws.com
     volumeHandle: s3-csi-driver-volume
     volumeAttributes:
-      bucketName: chinmayto-ct-eks-cluster-s3-storage
+      bucketName: ${S3_BUCKET_NAME}
       prefix: "k8s-storage/"

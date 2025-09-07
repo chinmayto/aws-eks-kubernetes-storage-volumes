@@ -545,7 +545,10 @@ kubectl get service nginx-efs-dynamic-service
 
 # Test nginx web servers
 kubectl port-forward service/nginx-efs-static-service 8080:80   # Static
+# Then visit http://localhost:8080
+
 kubectl port-forward service/nginx-efs-dynamic-service 8081:80  # Dynamic
+# Then visit http://localhost:8081
 
 # Test file persistence
 kubectl exec -it nginx-efs-static-pod -- ls -la /usr/share/nginx/html/

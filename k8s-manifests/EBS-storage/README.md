@@ -529,7 +529,10 @@ kubectl exec nginx-ebs-dynamic-pod -- cat /usr/share/nginx/html/index.html
 
 # Test nginx web servers
 kubectl port-forward service/nginx-ebs-static-service 8082:80   # Static
+# Then visit http://localhost:8082
+
 kubectl port-forward service/nginx-ebs-dynamic-service 8083:80  # Dynamic
+# Then visit http://localhost:8083
 ```
 
 ## Cleanup
