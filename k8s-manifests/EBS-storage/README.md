@@ -1,4 +1,4 @@
-# Implementing Amazon EBS Storage with Amazon EKS Using Terraform and Kubernetes Manifests
+# Kubernetes Storage Playlist - Part 3: Implementing Amazon EBS Storage with Amazon EKS Using Terraform and Kubernetes Manifests
 
 In this blog, we’ll explore how to integrate Amazon Elastic Block Store (EBS) with Amazon Elastic Kubernetes Service (EKS). We’ll provision an EKS cluster with Terraform, configure the EBS CSI driver, and run an Nginx container that uses EBS storage to persist website files.
 
@@ -8,6 +8,15 @@ This is a practical guide for anyone building stateful workloads on EKS.
 ### What is Amazon EBS?
 
 Amazon Elastic Block Store (EBS) provides persistent block-level storage volumes that can be attached to Amazon EC2 instances. Within Kubernetes, EBS volumes can be exposed to Pods through the EBS CSI (Container Storage Interface) driver, allowing workloads to persist data beyond pod lifecycles.
+
+
+### Architecture Diagram
+
+When you use Amazon EBS with Amazon EKS, your application asks for storage through a PersistentVolumeClaim (PVC). Kubernetes then either connects this request to an existing EBS volume (static provisioning) or automatically creates a new one (dynamic provisioning) with the help of a StorageClass and the EBS CSI driver. 
+
+The CSI driver talks to AWS to create and attach the volume to the worker node where your Pod is running, and the volume gets mounted inside the container at the specified path (like /usr/share/nginx/html). One important thing to remember is that EBS volumes work only within a single Availability Zone (AZ). This means your Pod and the EBS volume must be in the same AZ. Dynamic provisioning usually takes care of this automatically, but with static provisioning, you need to make sure the volume is created in the right AZ.
+
+![alt text](/k8s-manifests/EBS-storage/images/EKS%20EBS%20Architecture.png)
 
 ### Key Benefits for EKS
 
@@ -390,6 +399,23 @@ kubectl apply -f static-nginx-service.yaml
 
 Refer to `static-deploy.sh` for deployment script for static provisioning
 
+```bash
+$ kubectl get sc,pv,pvc
+NAME                                        PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+storageclass.storage.k8s.io/ebs-static-sc   ebs.csi.aws.com         Delete          WaitForFirstConsumer   true                   6m39s
+
+NAME                             CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS    VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/ebs-static-pv   10Gi       RWO            Retain           Bound    default/ebs-static-pvc   ebs-static-sc   <unset>                          6m31s
+
+NAME                                   STATUS   VOLUME          CAPACITY   ACCESS MODES   STORAGECLASS    VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/ebs-static-pvc   Bound    ebs-static-pv   10Gi       RWO            ebs-static-sc   <unset>                 6m28s
+```
+EBS Volume:
+![alt text](/k8s-manifests/EBS-storage/images/EBS-volume-static.png)
+
+Nginx pod accessing EBS for index.html
+![alt text](/k8s-manifests/EBS-storage/images/Static-EBS.png)
+
 ### Dynamic Provisioning (Recommended)
 
 In dynamic provisioning, Kubernetes automatically creates EBS volumes on demand using the EBS CSI driver and a StorageClass.
@@ -496,6 +522,26 @@ kubectl apply -f dynamic-nginx-service.yaml
 ```
 
 Refer to `dynamic-deploy.sh` for deployment script for dynamic provisioning
+
+```bash
+$ kubectl get sc,pv,pvc
+NAME                                         PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+storageclass.storage.k8s.io/ebs-dynamic-sc   ebs.csi.aws.com         Delete          WaitForFirstConsumer   true                   3m31s
+
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                     STORAGECLASS     VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/pvc-7057dfad-6961-49cd-bf4f-db2f0bd9727f   10Gi       RWO            Delete           Bound    default/ebs-dynamic-pvc   ebs-dynamic-sc   <unset>                          3m22s
+
+NAME                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS     VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/ebs-dynamic-pvc   Bound    pvc-7057dfad-6961-49cd-bf4f-db2f0bd9727f   10Gi       RWO            ebs-dynamic-sc   <unset>                 3m29s
+```
+
+EBS Volume:
+
+![alt text](/k8s-manifests/EBS-storage/images/EBS-Volume-Dynamic.png)
+
+Nginx pod accessing EBS for index.html
+
+![alt text](/k8s-manifests/EBS-storage/images/Dynamic-EBS.png)
 
 ### Verification
 

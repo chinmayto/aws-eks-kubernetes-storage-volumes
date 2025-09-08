@@ -1,4 +1,4 @@
-# Implementing Amazon EFS Storage with EKS using Terraform and Kubernetes Manifests
+# Kubernetes Storage Playlist - Part 2: Implementing Amazon EFS Storage with EKS using Terraform and Kubernetes Manifests
 
 In this blog, we will walk through how to integrate Amazon Elastic File System (EFS) with Amazon Elastic Kubernetes Service (EKS) using Terraform for infrastructure provisioning and Kubernetes manifests for workloads.
 
@@ -10,6 +10,12 @@ As a demo, we will deploy an NGINX container that uses EFS-backed storage to per
 Amazon Elastic File System (EFS) is a fully managed, scalable, and serverless network file system that can be mounted concurrently by multiple EC2 instances, Lambda functions, and Kubernetes pods.
 
 For Kubernetes workloads, EFS provides persistent volumes that can be shared across multiple pods, even across Availability Zones (AZs) in a VPC.
+
+### Architecture Diagram
+
+The architecture of how Amazon EFS integrates with an EKS cluster revolves around Kubernetes storage resources and AWS networking components. First, an EFS file system is created with mount targets in each Availability Zone of the VPC, ensuring that EKS worker nodes across zones can connect to the storage. The EFS CSI driver, deployed as a DaemonSet in the EKS cluster, acts as the bridge between Kubernetes and EFS. To use this storage, a StorageClass is defined, which tells Kubernetes how to provision PersistentVolumes (PVs) either statically (by pointing to an existing file system/directory) or dynamically (by creating sub-directories through EFS Access Points). Applications then request storage using PersistentVolumeClaims (PVCs), which bind to the appropriate PV. When pods are deployed (e.g., an NGINX container), the CSI driver mounts the EFS file system onto the worker node through the mount targets, and the pod accesses it as a standard directory path. This setup ensures that any pod in the cluster, regardless of node or AZ, can reliably attach to the same EFS-backed storage for shared and persistent data.
+
+![alt text](/k8s-manifests/EFS-storage/images/EKS%20EFS%20Architecture.png)
 
 ### Key Benefits for EKS
 

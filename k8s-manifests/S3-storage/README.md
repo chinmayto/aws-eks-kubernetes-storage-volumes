@@ -1,14 +1,25 @@
-# Implementing Amazon S3 Storage with EKS using Terraform and YAML
+# Kubernetes Storage Playlist - Part 4: Implementing Amazon S3 Storage with EKS using Terraform and and Kubernetes Manifests
 
 In this blog, we’ll explore how to integrate Amazon S3 as a storage solution with Amazon EKS using Terraform and Kubernetes YAML manifests. We will run a simple Nginx container that serves website files stored in an S3 bucket.
 
 This approach leverages the Mountpoint for S3 CSI driver, which provides Kubernetes workloads access to Amazon S3 objects using standard POSIX interfaces.
 
-
 ## Understanding Amazon S3 for Kubernetes
 ### What is Amazon S3?
 
 Amazon Simple Storage Service (Amazon S3) is an object storage service designed for scalability, durability, and availability. Unlike traditional block storage (like EBS) or file storage (like EFS), S3 stores data as objects inside buckets, which makes it ideal for static content, logs, and backups.
+
+### Architecture Diagram
+
+The architecture of attaching Amazon S3 storage to an EKS cluster revolves around the S3 CSI (Container Storage Interface) driver and the Mountpoint for S3 integration. 
+
+At the base layer, an S3 bucket acts as the backend object store where application data is kept. Inside Kubernetes, a StorageClass defines how storage is provisioned and consumed. With S3, however, only static provisioning is currently supported—meaning a PersistentVolume (PV) must be manually created and mapped to an existing S3 bucket, and then a PersistentVolumeClaim (PVC) binds to that PV so workloads can access it. 
+
+Once a pod is deployed, Kubernetes mounts the PVC to the container’s filesystem through the S3 CSI driver, which internally uses Mountpoint for S3 to provide file system-like access to objects in the bucket. 
+
+While dynamic provisioning—where PVCs automatically trigger creation of new storage volumes—is common for drivers like EBS and EFS, it is not yet available for S3. This makes static provisioning the only option, requiring administrators to pre-define the mapping between PVs and S3 buckets. Security is handled through IAM Roles for Service Accounts (IRSA), ensuring pods have only the minimum required permissions to access specific S3 buckets.
+
+![alt text](/k8s-manifests/S3-storage/images/EKS%20S3%20Architecture.png)
 
 Key Benefits of Using S3 with EKS
 - Scalability: Virtually unlimited storage capacity.
@@ -212,7 +223,7 @@ spec:
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteManyv
   persistentVolumeReclaimPolicy: Retain
   storageClassName: s3-csi-sc
   csi:
@@ -313,6 +324,30 @@ kubectl apply -f nginx-service.yaml
 ```
 
 Refer to `deploy.sh` for automated deployment script
+
+```bash
+$ kubectl get sc,pv,pvc
+NAME                                    PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+storageclass.storage.k8s.io/s3-csi-sc   s3.csi.aws.com          Delete          Immediate              false                  10m
+
+NAME                     CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM            STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+persistentvolume/s3-pv   1Gi        RWX            Retain           Bound    default/s3-pvc   s3-csi-sc      <unset>                          10m
+
+NAME                           STATUS   VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/s3-pvc   Bound    s3-pv    1Gi        RWX            s3-csi-sc      <unset>                 10m
+```
+
+S3 Bucket:
+
+![alt text](/k8s-manifests/S3-storage/images/S3%20Bucket.png)
+
+S3 Bucket Contents:
+
+![alt text](/k8s-manifests/S3-storage/images/S3%20Bucket%20Contents.png)
+
+Nginx pod accessing S3 for index.html
+
+![alt text](/k8s-manifests/S3-storage/images/EKS%20S3%20Storage.png)
 
 ## Verification
 

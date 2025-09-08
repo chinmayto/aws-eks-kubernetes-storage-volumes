@@ -19,15 +19,6 @@ if [ ! -f "../../infrastructure/outputs.tf" ]; then
     exit 1
 fi
 
-# Check if S3 CSI driver is installed
-echo -e "${YELLOW}Checking S3 CSI driver installation...${NC}"
-if ! kubectl get pods -n kube-system | grep -q aws-mountpoint-s3-csi-driver; then
-    echo -e "${RED}Error: S3 CSI driver not found. Make sure it's installed as an EKS addon.${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}S3 CSI driver is installed${NC}"
-
 # Get S3 values from Terraform outputs
 echo -e "${YELLOW}Getting S3 values from Terraform...${NC}"
 cd ../../infrastructure
